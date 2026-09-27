@@ -2,12 +2,23 @@
 
 AI-Powered Customer Support & Ticket Management Platform
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Available%20Now-success?style=for-the-badge&logo=vercel)](https://resolveai-ai-support-platform-beta.vercel.app/)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
 [![React Version](https://img.shields.io/badge/react-19.2.8-blue.svg)](https://react.dev/)
 [![TailwindCSS](https://img.shields.io/badge/tailwindcss-v4-38bdf8.svg)](https://tailwindcss.com/)
 [![Gemini AI](https://img.shields.io/badge/Google%20Gemini-Generative%20AI-orange.svg)](https://ai.google.dev/)
 [![Vercel Ready](https://img.shields.io/badge/Vercel-Single%20Project%20Deployment-black.svg)](https://vercel.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](https://opensource.org/licenses/MIT)
+
+## 🚀 Live Demo
+
+Experience the live, fully-deployed SaaS platform:
+
+👉 **[🌐 Live Demo](https://resolveai-ai-support-platform-beta.vercel.app/)** — `https://resolveai-ai-support-platform-beta.vercel.app/`
+
+> ⚡ **Quick Evaluation**: The login page includes **1-Click Quick Demo Login** buttons for instant access as **Support Agent**, **Customer**, or **Administrator** without manual typing.
+
+---
 
 ResolveAI is a modern, production-grade SaaS customer support platform where **Google Gemini AI** is deeply integrated into core operational workflows rather than just acting as a disconnected chatbot.
 
@@ -181,6 +192,8 @@ npm run dev
 
 ## 🚢 Single-Project Vercel Deployment Guide
 
+- **Live Application**: [https://resolveai-ai-support-platform-beta.vercel.app/](https://resolveai-ai-support-platform-beta.vercel.app/)
+
 1. In **[Vercel](https://vercel.com)**, click **Add New > Project** and import `Mit2001/resolveai-ai-support-platform`.
 2. Configure project settings:
    - **Framework Preset**: `Other` (or `Vite`)
@@ -194,6 +207,7 @@ npm run dev
    - `GEMINI_API_KEY` = `<your-google-gemini-api-key>`
    - `NODE_ENV` = `production`
 4. Click **Deploy**. Both the React frontend and Express serverless API will be live on your single Vercel URL!
+
 
 ---
 
