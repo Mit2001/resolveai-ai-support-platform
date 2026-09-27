@@ -173,3 +173,20 @@ export const chatAssistant = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Get AI service status and diagnostics
+// @route   GET /api/ai/status
+// @access  Private
+export const getAiStatus = async (req, res, next) => {
+  try {
+    const { testGeminiConnection } = await import('../services/geminiService.js');
+    const status = await testGeminiConnection();
+    return res.json({
+      success: true,
+      data: status,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
