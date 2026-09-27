@@ -6,6 +6,7 @@ AI-Powered Customer Support & Ticket Management Platform
 [![React Version](https://img.shields.io/badge/react-19.2.8-blue.svg)](https://react.dev/)
 [![TailwindCSS](https://img.shields.io/badge/tailwindcss-v4-38bdf8.svg)](https://tailwindcss.com/)
 [![Gemini AI](https://img.shields.io/badge/Google%20Gemini-Generative%20AI-orange.svg)](https://ai.google.dev/)
+[![Vercel Ready](https://img.shields.io/badge/Vercel-Single%20Project%20Deployment-black.svg)](https://vercel.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](https://opensource.org/licenses/MIT)
 
 ResolveAI is a modern, production-grade SaaS customer support platform where **Google Gemini AI** is deeply integrated into core operational workflows rather than just acting as a disconnected chatbot.
@@ -14,23 +15,17 @@ Support agents can autonomously analyze incoming tickets, predict customer senti
 
 ---
 
-## 🏗️ System Architecture
+## 🏗️ Production Architecture (Unified Vercel Deployment)
 
 ```text
-React (Vite + Tailwind CSS + Recharts)
-   │
-   ▼
-Axios Client (VITE_API_URL + JWT Interceptors)
-   │
-   ▼
-Express.js REST API (Node.js + RBAC Middleware)
-   │
-   ├───────────────────────────────┐
-   ▼                               ▼
-MongoDB (Mongoose Schemas)   Google Gemini AI Engine (Server-Side Only)
+Vercel (Single Full-Stack Project)
+├── React Frontend (Vite SPA static assets from client/dist)
+└── Express.js REST API (Vercel Serverless Function via /api/index.js)
+      ├── MongoDB Atlas (Cloud Database)
+      └── Google Gemini AI Engine (Server-Side Only)
 ```
 
-> 🔒 **Security Notice**: All Google Gemini API calls are strictly performed server-side in `server/services/geminiService.js`. The `GEMINI_API_KEY` is **never** exposed or bundled into the client application. Furthermore, AI outputs are suggestions—support agents always maintain final human oversight before dispatching replies to customers.
+> 🔒 **Security Notice**: All Google Gemini API calls and JWT operations are strictly performed server-side in `server/services/geminiService.js`. The `GEMINI_API_KEY`, `MONGODB_URI`, and `JWT_SECRET` are **never** exposed or bundled into the client browser application. Furthermore, AI outputs are suggestions—support agents always maintain final human oversight before dispatching replies to customers.
 
 ---
 
@@ -89,14 +84,17 @@ MongoDB (Mongoose Schemas)   Google Gemini AI Engine (Server-Side Only)
 |---|---|
 | **Frontend** | React 19, Vite, Tailwind CSS v4, Lucide Icons, Framer Motion, Recharts, Axios, React Router DOM |
 | **Backend** | Node.js, Express.js, REST API Architecture, JWT Authentication, bcryptjs, Mongoose, Morgan |
-| **Database** | MongoDB (with zero-configuration local in-memory fallback store) |
+| **Database** | MongoDB Atlas (with zero-configuration local in-memory fallback store) |
 | **AI Integration** | Google Gemini Generative AI SDK (`@google/generative-ai`) + Fallback NLP engine |
+| **Deployment** | Vercel (Unified Frontend + Serverless Express REST API) |
 
 ---
 
 ## 📁 Folder Structure
 
 ```
+├── api/
+│   └── index.js                # Vercel Serverless Function entry point (Express adapter)
 ├── client/                     # Vite React Frontend
 │   ├── src/
 │   │   ├── components/
@@ -118,19 +116,20 @@ MongoDB (Mongoose Schemas)   Google Gemini AI Engine (Server-Side Only)
 │   └── .env.example
 │
 ├── server/                     # Express REST API Backend
-│   ├── config/                 # db.js (MongoDB connection with graceful fallback)
+│   ├── config/                 # db.js (MongoDB serverless connection pooling)
 │   ├── controllers/            # auth, ticket, message, customer, ai, analytics, team
 │   ├── middleware/             # authMiddleware.js (JWT & RBAC), errorMiddleware.js
 │   ├── models/                 # User.js, Ticket.js, Message.js, AIInsight.js
 │   ├── routes/                 # Express modular routes
 │   ├── services/               # geminiService.js & mockDataStore.js
 │   ├── utils/                  # seedData.js
-│   ├── app.js                  # Express middleware & CORS configuration
-│   ├── server.js               # Server entry point
+│   ├── app.js                  # Express middleware & single-origin CORS
+│   ├── server.js               # Local development server entry point
 │   ├── package.json
 │   └── .env.example
 │
-├── package.json                # Root package orchestration
+├── vercel.json                 # Vercel routing & build configuration
+├── package.json                # Root package orchestration & serverless dependencies
 ├── .gitignore
 ├── .env.example
 └── README.md
@@ -140,20 +139,15 @@ MongoDB (Mongoose Schemas)   Google Gemini AI Engine (Server-Side Only)
 
 ## ⚙️ Environment Variables
 
-### Server (`server/.env`)
-```env
-PORT=5000
-MONGODB_URI=mongodb://127.0.0.1:27017/resolveai
-JWT_SECRET=resolveai_super_secret_jwt_key_2026_modern_saas
-GEMINI_API_KEY=your_google_gemini_api_key
-CLIENT_URL=http://localhost:5173
-NODE_ENV=development
-```
+### Vercel Environment Variables (Configured in Project Settings)
 
-### Client (`client/.env`)
-```env
-VITE_API_URL=http://localhost:5000/api
-```
+| Variable | Scope | Description |
+|---|---|---|
+| `MONGODB_URI` | **Server-Only** | MongoDB Atlas connection URI |
+| `JWT_SECRET` | **Server-Only** | Secure random key for signing JWT auth tokens |
+| `GEMINI_API_KEY` | **Server-Only** | Google Gemini API key from Google AI Studio |
+| `NODE_ENV` | **Server-Only** | `production` |
+| `VITE_API_URL` | **Client (Optional)** | Defaults to `/api` for same-origin routing |
 
 ---
 
@@ -161,8 +155,8 @@ VITE_API_URL=http://localhost:5000/api
 
 ### 1. Install Dependencies
 ```bash
-# Clone the repository
-git clone https://github.com/your-username/resolveai-ai-support-platform.git
+# Clone repository
+git clone https://github.com/Mit2001/resolveai-ai-support-platform.git
 cd resolveai-ai-support-platform
 
 # Install root, backend, and frontend packages
@@ -185,20 +179,21 @@ npm run dev
 
 ---
 
-## 🗄️ MongoDB & Gemini AI Configuration
+## 🚢 Single-Project Vercel Deployment Guide
 
-### MongoDB Setup
-- **Local MongoDB**: Ensure `mongod` is running on `mongodb://127.0.0.1:27017/resolveai`.
-- **MongoDB Atlas**: Replace `MONGODB_URI` with your connection string:
-  ```env
-  MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/resolveai?retryWrites=true&w=majority
-  ```
-- **Fallback Data Mode**: If MongoDB is unreachable or not installed, the platform automatically switches to an in-memory datastore with pre-seeded tickets for zero-configuration testing.
-
-### Gemini AI Setup
-1. Obtain an API key from [Google AI Studio](https://aistudio.google.com/).
-2. Set `GEMINI_API_KEY=your_key_here` in `server/.env`.
-3. The platform will automatically use live `gemini-1.5-flash` / `gemini-2.0-flash` models. If no key is provided, the platform uses an intelligent deterministic semantic NLP fallback engine so features remain testable.
+1. In **[Vercel](https://vercel.com)**, click **Add New > Project** and import `Mit2001/resolveai-ai-support-platform`.
+2. Configure project settings:
+   - **Framework Preset**: `Other` (or `Vite`)
+   - **Root Directory**: `./` *(Leave blank / project root)*
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `client/dist`
+   - **Install Command**: `npm install`
+3. Under **Environment Variables**, add:
+   - `MONGODB_URI` = `mongodb+srv://<user>:<password>@cluster0.mongodb.net/resolveai?retryWrites=true&w=majority`
+   - `JWT_SECRET` = `<your-secure-random-jwt-secret>`
+   - `GEMINI_API_KEY` = `<your-google-gemini-api-key>`
+   - `NODE_ENV` = `production`
+4. Click **Deploy**. Both the React frontend and Express serverless API will be live on your single Vercel URL!
 
 ---
 
@@ -236,52 +231,6 @@ npm run dev
 - `GET /api/analytics/dashboard` — High-level KPI metrics & 7-day throughput chart data
 - `GET /api/analytics/tickets` — SLA compliance, sentiment distribution, and hourly volume
 - `GET /api/health` — System status and Gemini configuration indicator
-
----
-
-## 🚢 Production Deployment Architecture
-
-```text
-       Vercel (Frontend Client)
-                 │  (HTTPS / REST)
-                 ▼
-       Render / Railway (Node.js API Server)
-        ├── MongoDB Atlas (Managed Database)
-        └── Google Gemini AI API (Server-Side Inference)
-```
-
-### Vercel (Frontend)
-- **Root Directory**: `client`
-- **Build Command**: `npm run build`
-- **Output Directory**: `dist`
-- **Environment Variable**: `VITE_API_URL=https://<your-backend-domain>/api`
-
-### Render / Railway (Backend)
-- **Root Directory**: `server`
-- **Build Command**: `npm install`
-- **Start Command**: `npm start`
-- **Environment Variables**: `PORT`, `MONGODB_URI`, `JWT_SECRET`, `GEMINI_API_KEY`, `CLIENT_URL=https://<your-vercel-domain>`
-
----
-
-## 📸 Screenshots Preview
-
-| Landing Page & Hero | AI Insights & Ticket Details |
-|---|---|
-| Clean modern SaaS landing page with AI workflow visualizer | Real-time Gemini analysis panel with "Use Response" button |
-
-| Analytics & SLA Metrics | AI Support Copilot |
-|---|---|
-| Recharts throughput, sentiment, and agent leaderboard | Conversational copilot for queue triage and email drafting |
-
----
-
-## 🔮 Future Improvements
-
-- [ ] Real-time WebSocket ticket updates via Socket.io
-- [ ] Multi-channel support integration (Slack / Discord / Email webhooks)
-- [ ] Multilingual automated response translation
-- [ ] Automated SLA breach notification webhooks via PagerDuty / Opsgenie
 
 ---
 

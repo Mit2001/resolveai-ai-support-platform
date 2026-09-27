@@ -1,21 +1,41 @@
 import mongoose from 'mongoose';
 
 let isConnected = false;
+let connectionPromise = null;
 
 export const connectDB = async () => {
-  const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/resolveai';
-  try {
-    const conn = await mongoose.connect(uri, {
-      serverSelectionTimeoutMS: 3000,
-    });
+  // If already connected, return existing connection
+  if (mongoose.connection.readyState >= 1) {
     isConnected = true;
-    console.log(`[MongoDB] Connected: ${conn.connection.host}`);
-    return conn;
-  } catch (error) {
-    console.warn(`[MongoDB Warning] Could not connect to local MongoDB (${error.message}). Running in mock/in-memory fallback database mode for zero-configuration testing.`);
-    isConnected = false;
-    return null;
+    return mongoose.connection;
   }
+
+  // If connection is in progress, reuse the promise
+  if (connectionPromise) {
+    return connectionPromise;
+  }
+
+  const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/resolveai';
+
+  connectionPromise = (async () => {
+    try {
+      const conn = await mongoose.connect(uri, {
+        serverSelectionTimeoutMS: 4000,
+        bufferCommands: false,
+      });
+      isConnected = true;
+      console.log(`[MongoDB] Connected: ${conn.connection.host}`);
+      return conn;
+    } catch (error) {
+      console.warn(`[MongoDB Notice] Database connection unavailable (${error.message}). Running in mock/in-memory fallback mode.`);
+      isConnected = false;
+      return null;
+    } finally {
+      connectionPromise = null;
+    }
+  })();
+
+  return connectionPromise;
 };
 
-export const isDbConnected = () => isConnected;
+export const isDbConnected = () => isConnected || mongoose.connection.readyState >= 1;

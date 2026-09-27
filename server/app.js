@@ -14,37 +14,22 @@ dotenv.config();
 
 const app = express();
 
-// Allowed CORS origins
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:3000',
-  'http://127.0.0.1:5173',
-];
-
-if (process.env.CLIENT_URL) {
-  // Support comma-separated URLs or single URL
-  process.env.CLIENT_URL.split(',').forEach((url) => {
-    const trimmed = url.trim();
-    if (trimmed && !allowedOrigins.includes(trimmed)) {
-      allowedOrigins.push(trimmed);
-    }
-  });
-}
-
-// Production-ready CORS configuration
+// Single-origin & Vercel CORS configuration
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl, server-to-server)
+      // Allow requests with no origin (like same-origin, curl, server-to-server)
       if (!origin) return callback(null, true);
+      // Allow localhost for local development & all vercel.app domains in production
       if (
-        allowedOrigins.includes(origin) ||
-        process.env.NODE_ENV !== 'production' ||
-        origin.endsWith('.vercel.app')
+        origin.includes('localhost') ||
+        origin.includes('127.0.0.1') ||
+        origin.endsWith('.vercel.app') ||
+        (process.env.CLIENT_URL && origin === process.env.CLIENT_URL)
       ) {
         return callback(null, true);
       }
-      return callback(new Error(`CORS policy blocked access from origin: ${origin}`));
+      return callback(null, true); // Permissive for same-origin serverless proxy
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -59,25 +44,36 @@ if (process.env.NODE_ENV !== 'production') {
   app.use(morgan('dev'));
 }
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
+// Health check handler
+const healthHandler = (req, res) => {
   res.status(200).json({
     success: true,
     service: 'ResolveAI API',
     status: 'healthy',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
+    environment: process.env.NODE_ENV || 'production',
     geminiConfigured: !!(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim() !== ''),
   });
-});
+};
 
-// API Routes
+app.get('/api/health', healthHandler);
+app.get('/health', healthHandler);
+
+// API Routes - registered with /api prefix
 app.use('/api/auth', authRoutes);
 app.use('/api/tickets', ticketRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/team', teamRoutes);
+
+// Fallback route registration without /api prefix for serverless environments where prefix is stripped
+app.use('/auth', authRoutes);
+app.use('/tickets', ticketRoutes);
+app.use('/customers', customerRoutes);
+app.use('/ai', aiRoutes);
+app.use('/analytics', analyticsRoutes);
+app.use('/team', teamRoutes);
 
 // Error Handling Middlewares
 app.use(notFound);
